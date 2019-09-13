@@ -1,0 +1,32 @@
+version: '2'
+services:
+  apache_with_php:
+    build: .
+    volumes:
+      - ./Projeto:/var/www/html/Projeto:cached
+      - ./configuracao.json:/var/www/html/configuracao.json
+      - ${DOCKER_VOLUMES}/storage:/var/www/html/storage:delegated
+    ports:
+      - "80:80"
+    environment:
+        XDEBUG_CONFIG: remote_host=${XDEBUG_HOST}
+        PHP_IDE_CONFIG: serverName=docker
+    depends_on:
+      - postgres
+
+  init:
+    build: .
+    volumes_from: [apache_with_php]
+    working_dir: /var/www/html/Projeto
+    command: bash -c "composer install -o && php artisan migrate"
+
+  postgres:
+    image: postgres:11-alpine
+    volumes:
+      - ${DOCKER_VOLUMES}/database_files:/var/lib/postgresql/data:delegated
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ted_eloquent
+    ports:
+      - '5432:5432'
